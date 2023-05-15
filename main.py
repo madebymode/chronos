@@ -178,7 +178,7 @@ def daily_job():
 
   # If today is Monday, post a summary of this week's events
   if now.format('dddd') == 'Monday':
-    end_of_week = now.shift(days=+4)
+    end_of_week = now.shift(days=+6)
     events_this_week = get_events_in_range(calendar, now, end_of_week)
     post_weekly_summary_to_slack(events_this_week)
 
