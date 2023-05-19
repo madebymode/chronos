@@ -45,13 +45,18 @@ def get_events(calendar):
             start = arrow.get(component.get("dtstart").dt)
             end = component.get("dtend")
 
-            # If there's an end date or time, adjust it because DTEND is exclusive
+            # Check if the events have a time, if so, convert to 'US/Eastern' timezone
+            if isinstance(component.get('dtstart').dt, datetime.datetime):
+                start = start.to('US/Eastern')
+
             if end:
                 end = arrow.get(end.dt)
+                if isinstance(end.datetime, datetime.datetime):
+                    end = end.to('US/Eastern')
+
                 if "VALUE=DATE" in component.get("dtend").to_ical().decode():
                     # If end is a date (but not a datetime), subtract one day
                     end = end.shift(days=-1)
-
             else:
                 end = start
 
@@ -122,10 +127,10 @@ def post_todays_events_to_slack(events):
 
         if start.date() == end.date():  # the event occurs within a single day
             if start.time() == end.time() and start.time().hour == 0 and start.time().minute == 0:  # all-day event
-                time_range = ""
+                time_range = "\n all-day"
             else:  # event with start and end times
-                start_str = start.format('HH:mm')
-                end_str = end.format('HH:mm')
+                start_str = start.format('hh:mm A')
+                end_str = end.format('hh:mm A')
                 time_range = f"\n{start_str} - {end_str}"
         else:  # event spans multiple days
             start_str = start.format('YYYY-MM-DD')
@@ -176,8 +181,8 @@ def post_weekly_summary_to_slack(events):
                 })
             else:
                 date_str = start.format('YYYY-MM-DD')
-                start_str = start.format('HH:mm')
-                end_str = end.format('HH:mm')
+                start_str = start.format('hh:mm A')
+                end_str = end.format('hh:mm A')
                 blocks.append({
                     "type": "section",
                     "text": {
