@@ -1,3 +1,4 @@
+import datetime
 import os
 import string
 from difflib import SequenceMatcher
@@ -42,7 +43,18 @@ def get_events(calendar):
     for component in calendar.walk():
         if component.name == "VEVENT":
             start = arrow.get(component.get("dtstart").dt)
-            end = arrow.get(component.get("dtend").dt) if component.get("dtend") else start
+            end = component.get("dtend")
+
+            # If there's an end date or time, adjust it because DTEND is exclusive
+            if end:
+                end = arrow.get(end.dt)
+                if "VALUE=DATE" in component.get("dtend").to_ical().decode():
+                    # If end is a date (but not a datetime), subtract one day
+                    end = end.shift(days=-1)
+
+            else:
+                end = start
+
             summary = component.get("summary")
             events.append({"start": start, "end": end, "summary": summary})
     return events
@@ -189,6 +201,8 @@ def post_weekly_summary_to_slack(events):
     client.chat_postMessage(channel=SLACK_CHANNEL, blocks=blocks)
 
 
+from datetime import timedelta
+
 def daily_job():
     gusto_calendar = fetch_calendar(GUSTO_ICS_URL)
     gusto_events = get_events(gusto_calendar)
@@ -203,14 +217,30 @@ def daily_job():
     now = arrow.now('US/Eastern')
     events_today = [event for event in combined_events if (event['start'].date() <= now.date() <= event['end'].date())]
 
-    post_todays_events_to_slack(events_today)
-
-    # If today is Monday, post a summary of this week's events
+    # If today is Monday, post a summary of this week's events and anniversary events from the weekend
     if now.format('dddd') == 'Monday':
+        # Fetch events from the weekend
+        last_saturday = now.shift(days=-2)
+        last_sunday = now.shift(days=-1)
+        anniversary_events = [event for event in combined_events if
+                              last_saturday.date() <= event['start'].date() <= last_sunday.date() and
+                              'anniversary' in event['summary'].lower()]
+
+        # Add today's events to anniversary events
+        anniversary_events.extend(events_today)
+
+        # Post today's events with anniversary events
+        post_todays_events_to_slack(anniversary_events)
+
+        # Fetch events from this week
         end_of_week = now.shift(days=+6)
         events_this_week = [event for event in combined_events if
                             now.date() <= event['start'].date() <= end_of_week.date()]
         post_weekly_summary_to_slack(events_this_week)
+    else:
+        post_todays_events_to_slack(events_today)
+
+
 
 
 if __name__ == "__main__":
