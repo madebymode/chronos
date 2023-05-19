@@ -64,6 +64,13 @@ def similarity(a, b):
     return SequenceMatcher(None, a, b).ratio()
 
 
+def first_word(a, b):
+    """
+    Checks if the first words of two strings are identical
+    """
+    return a.split()[0] == b.split()[0]
+
+
 def remove_duplicates(events):
     """
     Removes duplicates based on start/end times and similar summary descriptions.
@@ -73,6 +80,8 @@ def remove_duplicates(events):
     for event in events:
         if not any(e for e in unique_events if e['start'] == event['start'] and
                                                e['end'] == event['end'] and
+                                               first_word(normalize_string(e['summary']),
+                                                          normalize_string(event['summary'])) and
                                                similarity(normalize_string(e['summary']),
                                                           normalize_string(event['summary'])) > 0.6):
             unique_events.append(event)
