@@ -206,8 +206,6 @@ def post_weekly_summary_to_slack(events):
     client.chat_postMessage(channel=SLACK_CHANNEL, blocks=blocks)
 
 
-from datetime import timedelta
-
 def daily_job():
     gusto_calendar = fetch_calendar(GUSTO_ICS_URL)
     gusto_events = get_events(gusto_calendar)
@@ -224,24 +222,14 @@ def daily_job():
 
     # If today is Monday, post a summary of this week's events and anniversary events from the weekend
     if now.format('dddd') == 'Monday':
-        # Fetch events from the weekend
-        last_saturday = now.shift(days=-2)
-        last_sunday = now.shift(days=-1)
-        anniversary_events = [event for event in combined_events if
-                              last_saturday.date() <= event['start'].date() <= last_sunday.date() and
-                              'anniversary' in event['summary'].lower()]
-
-        # Add today's events to anniversary events
-        anniversary_events.extend(events_today)
-
-        # Post today's events with anniversary events
-        post_todays_events_to_slack(anniversary_events)
-
         # Fetch events from this week
         end_of_week = now.shift(days=+6)
         events_this_week = [event for event in combined_events if
                             now.date() <= event['start'].date() <= end_of_week.date()]
         post_weekly_summary_to_slack(events_this_week)
+
+        # post today AFTER our summary
+        post_todays_events_to_slack(events_today)
     else:
         post_todays_events_to_slack(events_today)
 
