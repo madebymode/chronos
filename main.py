@@ -234,7 +234,5 @@ def daily_job():
         post_todays_events_to_slack(events_today)
 
 
-
-
 if __name__ == "__main__":
     daily_job()
