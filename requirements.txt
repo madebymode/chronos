@@ -1,5 +1,4 @@
-icalendar
-arrow
-requests
-slack-bolt
-schedule
+arrow==0.17.0
+icalendar==5.0.5
+requests==2.28.2
+slack_sdk==3.21.3
