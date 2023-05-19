@@ -1,10 +1,11 @@
 import os
+import string
+from difflib import SequenceMatcher
+
 import arrow
 import requests
 from icalendar import Calendar
 from slack_sdk import WebClient
-from difflib import SequenceMatcher
-import string
 
 # Set up the Slack app
 SLACK_BOT_TOKEN = os.environ["SLACK_BOT_TOKEN"]
@@ -16,6 +17,7 @@ KINHR_LOCAL_ICS_PATH = os.getenv("KINHR_ICS_PATH")
 
 # Define the target Slack channel
 SLACK_CHANNEL = os.environ["SLACK_CHANNEL"]
+
 
 def fetch_calendar(source, is_url=True):
     try:
@@ -31,6 +33,7 @@ def fetch_calendar(source, is_url=True):
         print(f"Failed to fetch calendar from source: {source}, due to {e}")
         return None
 
+
 def get_events(calendar):
     if not calendar:
         return []
@@ -44,6 +47,7 @@ def get_events(calendar):
             events.append({"start": start, "end": end, "summary": summary})
     return events
 
+
 def normalize_string(s):
     """
     Removes punctuation and converts string to lower case
@@ -52,11 +56,13 @@ def normalize_string(s):
     s = s.translate(str.maketrans('', '', string.punctuation))
     return s
 
+
 def similarity(a, b):
     """
     Returns a measure of the sequences' similarity as a float in the range [0, 1].
     """
     return SequenceMatcher(None, a, b).ratio()
+
 
 def remove_duplicates(events):
     """
@@ -66,110 +72,112 @@ def remove_duplicates(events):
 
     for event in events:
         if not any(e for e in unique_events if e['start'] == event['start'] and
-                   e['end'] == event['end'] and
-                   similarity(normalize_string(e['summary']), normalize_string(event['summary'])) > 0.6):
+                                               e['end'] == event['end'] and
+                                               similarity(normalize_string(e['summary']),
+                                                          normalize_string(event['summary'])) > 0.6):
             unique_events.append(event)
 
     return unique_events
 
+
 def post_todays_events_to_slack(events):
-  if not events:
-    return
+    if not events:
+        return
 
-  blocks = [
-    {
-      "type": "section",
-      "text": {
-        "type": "mrkdwn",
-        "text": "Today's events:"
-      }
-    }
-  ]
+    blocks = [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Today's events:"
+            }
+        }
+    ]
 
-  for event in events:
-    start = event["start"]
-    end = event["end"]
-    summary = event["summary"]
+    for event in events:
+        start = event["start"]
+        end = event["end"]
+        summary = event["summary"]
 
-    if start.date() == end.date():  # the event occurs within a single day
-      if start.time() == end.time() and start.time().hour == 0 and start.time().minute == 0:  # all-day event
-        time_range = ""
-      else:  # event with start and end times
-        start_str = start.format('HH:mm')
-        end_str = end.format('HH:mm')
-        time_range = f"\n{start_str} - {end_str}"
-    else:  # event spans multiple days
-      start_str = start.format('YYYY-MM-DD')
-      end_str = end.format('YYYY-MM-DD')
-      time_range = f"\nfrom {start_str} to {end_str}"
+        if start.date() == end.date():  # the event occurs within a single day
+            if start.time() == end.time() and start.time().hour == 0 and start.time().minute == 0:  # all-day event
+                time_range = ""
+            else:  # event with start and end times
+                start_str = start.format('HH:mm')
+                end_str = end.format('HH:mm')
+                time_range = f"\n{start_str} - {end_str}"
+        else:  # event spans multiple days
+            start_str = start.format('YYYY-MM-DD')
+            end_str = end.format('YYYY-MM-DD')
+            time_range = f"\nfrom {start_str} to {end_str}"
 
-    blocks.append({
-      "type": "section",
-      "text": {
-        "type": "mrkdwn",
-        "text": f"*{summary}*{time_range}"
-      }
-    })
+        blocks.append({
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"*{summary}*{time_range}"
+            }
+        })
 
-  blocks.append({"type": "divider"})
+    blocks.append({"type": "divider"})
 
-  client.chat_postMessage(channel=SLACK_CHANNEL, blocks=blocks)
+    client.chat_postMessage(channel=SLACK_CHANNEL, blocks=blocks)
 
 
 def post_weekly_summary_to_slack(events):
-  if not events:
-    return
+    if not events:
+        return
 
-  blocks = [
-    {
-      "type": "section",
-      "text": {
-        "type": "mrkdwn",
-        "text": "This week's events:"
-      }
-    }
-  ]
-
-  for event in events:
-    start = event["start"]
-    end = event["end"]
-    summary = event["summary"]
-
-    if start.date() == end.date():  # the event occurs within a single day
-      if start.time() == end.time() and start.time().hour == 0 and start.time().minute == 0:  # all-day event
-        date_str = start.format('YYYY-MM-DD')
-        blocks.append({
-          "type": "section",
-          "text": {
-            "type": "mrkdwn",
-            "text": f"*{summary}* on {date_str}"
-          }
-        })
-      else:
-        date_str = start.format('YYYY-MM-DD')
-        start_str = start.format('HH:mm')
-        end_str = end.format('HH:mm')
-        blocks.append({
-          "type": "section",
-          "text": {
-            "type": "mrkdwn",
-            "text": f"*{summary}* on {date_str} from {start_str} to {end_str}"
-          }
-        })
-    else:  # event spans multiple days
-      start_str = start.format('YYYY-MM-DD')
-      end_str = end.format('YYYY-MM-DD')
-      blocks.append({
-        "type": "section",
-        "text": {
-          "type": "mrkdwn",
-          "text": f"*{summary}* from {start_str} to {end_str}"
+    blocks = [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "This week's events:"
+            }
         }
-      })
+    ]
 
-  blocks.append({"type": "divider"})
+    for event in events:
+        start = event["start"]
+        end = event["end"]
+        summary = event["summary"]
 
-  client.chat_postMessage(channel=SLACK_CHANNEL, blocks=blocks)
+        if start.date() == end.date():  # the event occurs within a single day
+            if start.time() == end.time() and start.time().hour == 0 and start.time().minute == 0:  # all-day event
+                date_str = start.format('YYYY-MM-DD')
+                blocks.append({
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"*{summary}* on {date_str}"
+                    }
+                })
+            else:
+                date_str = start.format('YYYY-MM-DD')
+                start_str = start.format('HH:mm')
+                end_str = end.format('HH:mm')
+                blocks.append({
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"*{summary}* on {date_str} from {start_str} to {end_str}"
+                    }
+                })
+        else:  # event spans multiple days
+            start_str = start.format('YYYY-MM-DD')
+            end_str = end.format('YYYY-MM-DD')
+            blocks.append({
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*{summary}* from {start_str} to {end_str}"
+                }
+            })
+
+    blocks.append({"type": "divider"})
+
+    client.chat_postMessage(channel=SLACK_CHANNEL, blocks=blocks)
 
 
 def daily_job():
@@ -191,8 +199,10 @@ def daily_job():
     # If today is Monday, post a summary of this week's events
     if now.format('dddd') == 'Monday':
         end_of_week = now.shift(days=+6)
-        events_this_week = [event for event in combined_events if now.date() <= event['start'].date() <= end_of_week.date()]
+        events_this_week = [event for event in combined_events if
+                            now.date() <= event['start'].date() <= end_of_week.date()]
         post_weekly_summary_to_slack(events_this_week)
+
 
 if __name__ == "__main__":
     daily_job()

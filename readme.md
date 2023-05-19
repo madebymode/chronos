@@ -1,6 +1,7 @@
 # Event Notifier
 
-This is a Python script that fetches events from an iCalendar feed and posts a summary of the day's events to a designated Slack channel. The script is designed to run daily using a Docker container and a cron job.
+This is a Python script that fetches events from an iCalendar feed and posts a summary of the day's events to a
+designated Slack channel. The script is designed to run daily using a Docker container and a cron job.
 
 ## Prerequisites
 
@@ -18,7 +19,8 @@ Before running the script, you need to set the following environment variables:
 - `SLACK_CHANNEL`: The name of the Slack channel to post the events summary to
 - `ICS_URL`: The URL of the iCalendar feed
 
-You can set these variables using a `.env` file in the root of the project. There is an example file provided (`example.env`).
+You can set these variables using a `.env` file in the root of the project. There is an example file
+provided (`example.env`).
 
 ## Usage
 
@@ -32,7 +34,8 @@ This will start the Docker container and run the script at 9am Eastern Time ever
 
 ## Modifying the Script
 
-If you need to modify the script to meet your requirements, you can do so by editing the `main.py` file in the root of the project. Once you have made your changes, rebuild the Docker image using the following command:
+If you need to modify the script to meet your requirements, you can do so by editing the `main.py` file in the root of
+the project. Once you have made your changes, rebuild the Docker image using the following command:
 
 ```
 docker-compose build
