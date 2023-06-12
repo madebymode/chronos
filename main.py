@@ -110,6 +110,9 @@ def post_todays_events_to_slack(events):
     if not events:
         return
 
+    # Sort events by start date and then by summary
+    events.sort(key=lambda x: (x['start'], x['summary']))        
+
     blocks = [
         {
             "type": "section",
@@ -153,6 +156,9 @@ def post_todays_events_to_slack(events):
 def post_weekly_summary_to_slack(events):
     if not events:
         return
+
+    # Sort events by start date and then by summary
+    events.sort(key=lambda x: (x['start'], x['summary']))
 
     blocks = [
         {
