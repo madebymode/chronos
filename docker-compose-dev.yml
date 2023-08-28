@@ -3,7 +3,7 @@ services:
   app-dev:
     build:
       context: .
-      dockerfile: Dockerfile-dev  
+      dockerfile: Dockerfile-dev
     volumes:
       - .:/app:ro
     env_file:
