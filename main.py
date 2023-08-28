@@ -35,9 +35,17 @@ def fetch_calendar(source, is_url=True):
         return None
 
 
+import os
+import arrow
+import datetime
+
+
 def get_events(calendar):
     if not calendar:
         return []
+
+    # Read the 'CALENDAR_OWNER' environment variable
+    calendar_owner = os.environ.get('CALENDAR_OWNER', 'Calendar Owner')  # Default to 'Your' if not found
 
     events = []
     for component in calendar.walk():
@@ -61,7 +69,12 @@ def get_events(calendar):
                 end = start
 
             summary = component.get("summary")
-            events.append({"start": start, "end": end, "summary": summary})
+
+            # Replace 'Your' with the value of 'CALENDAR_OWNER' and 'Paid Time Off time' with ' - OOO' in the summary
+            modified_summary = summary.replace("Your", calendar_owner).replace("Paid Time Off time", " - OOO")
+
+            events.append({"start": start, "end": end, "summary": modified_summary})
+
     return events
 
 
@@ -111,7 +124,7 @@ def post_todays_events_to_slack(events):
         return
 
     # Sort events by start date and then by summary
-    events.sort(key=lambda x: (x['start'], x['summary']))        
+    events.sort(key=lambda x: (x['start'], x['summary']))
 
     blocks = [
         {
