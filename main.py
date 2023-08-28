@@ -35,11 +35,6 @@ def fetch_calendar(source, is_url=True):
         return None
 
 
-import os
-import arrow
-import datetime
-
-
 def get_events(calendar):
     if not calendar:
         return []
