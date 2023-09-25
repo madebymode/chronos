@@ -204,7 +204,7 @@ def post_todays_events_to_slack(events):
         }
     ]
 
-    blocks = []
+
     for event in events:
         start = event["start"]
         end = event["end"]
@@ -251,19 +251,24 @@ def post_weekly_summary_to_slack(events):
         summary = event["summary"]
         description = event.get("description", "")
 
-        hours = extract_hours(description)
+        hours_str = extract_hours(description)
 
-        if hours is not None and hours < 8:  # event is less than 8 hours
-            date_str = start.format('YYYY-MM-DD')
-            time_range = f"\n{hours} hrs"
-            blocks.append({
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f"*{summary}* on {date_str}{time_range}"
-                }
-            })
-        elif start.date() == end.date():  # the event occurs within a single day
+        if hours_str:
+            # Extracting integer hours from the string.
+            hours = int(re.search(r"\d+", hours_str).group())
+
+            if hours < 8:  # event is less than 8 hours
+                date_str = start.format('YYYY-MM-DD')
+                blocks.append({
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"*{summary}* on {date_str}{hours_str}"
+                    }
+                })
+                continue  # Skip to the next iteration as this event is handled.
+
+        if start.date() == end.date():  # the event occurs within a single day
             date_str = start.format('YYYY-MM-DD')
             if start.time() == end.time() and start.time().hour == 0 and start.time().minute == 0:  # all-day event
                 blocks.append({
