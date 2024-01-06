@@ -1,5 +1,5 @@
 # Use the lightweight Alpine-based Python image
-FROM python:3.11-alpine as builder
+FROM python:3.11-alpine3.18 as builder
 
 # Set up the working directory
 WORKDIR /app
@@ -16,7 +16,7 @@ RUN pyinstaller --onefile --noconfirm --clean main.py
 
 # Start a new stage so we can get rid of the Python install,
 # resulting in a smaller final image
-FROM alpine:latest
+FROM alpine:3.18
 
 # Copy the standalone binary from the builder stage to /dist in final image
 COPY --from=builder /app/dist/main /dist/main
