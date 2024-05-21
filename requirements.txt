@@ -1,4 +1,4 @@
 arrow==0.17.0
 icalendar==5.0.5
-requests==2.31.0
+requests==2.32.0
 slack_sdk==3.21.3
