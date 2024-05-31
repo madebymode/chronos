@@ -46,6 +46,21 @@ def fetch_calendar(source, is_url=True):
         return None
 
 
+def is_similar(a, b, threshold=0.8):
+    """
+    Check if two strings are similar above a certain threshold.
+
+    Args:
+        a (str): First string to compare.
+        b (str): Second string to compare.
+        threshold (float): The similarity threshold.
+
+    Returns:
+        bool: True if the similarity is above the threshold, False otherwise.
+    """
+    ratio = SequenceMatcher(None, a.lower(), b.lower()).ratio()
+    return ratio > threshold
+
 def get_events(calendar):
     if not calendar:
         return []
@@ -57,6 +72,15 @@ def get_events(calendar):
     events = []
     for component in calendar.walk():
         if component.name == "VEVENT":
+
+            summary = component.get("summary")
+            description = component.get("description", "")
+
+            # Check for "anniversary" in summary or description
+            if is_similar(summary, "anniversary") or is_similar(description, "anniversary"):
+                continue  # Skip adding this event
+
+
             start = arrow.get(component.get("dtstart").dt)
             end = component.get("dtend")
 
@@ -84,47 +108,6 @@ def get_events(calendar):
             events.append({"start": start, "end": end, "summary": modified_summary, "description": description})
 
     return events
-
-
-def normalize_string(s):
-    """
-    Removes punctuation and converts string to lower case
-    """
-    s = s.lower()
-    s = s.translate(str.maketrans('', '', string.punctuation))
-    return s
-
-
-def similarity(a, b):
-    """
-    Returns a measure of the sequences' similarity as a float in the range [0, 1].
-    """
-    return SequenceMatcher(None, a, b).ratio()
-
-
-def first_word(a, b):
-    """
-    Checks if the first words of two strings are identical
-    """
-    return a.split()[0] == b.split()[0]
-
-
-def remove_duplicates(events):
-    """
-    Removes duplicates based on start/end times and similar summary descriptions.
-    """
-    unique_events = []
-
-    for event in events:
-        if not any(e for e in unique_events if e['start'] == event['start'] and
-                                               e['end'] == event['end'] and
-                                               first_word(normalize_string(e['summary']),
-                                                          normalize_string(event['summary'])) and
-                                               similarity(normalize_string(e['summary']),
-                                                          normalize_string(event['summary'])) > 0.6):
-            unique_events.append(event)
-
-    return unique_events
 
 
 def extract_hours(description):
@@ -309,15 +292,9 @@ def daily_job():
     gusto_calendar = fetch_calendar(GUSTO_ICS_URL)
     gusto_events = get_events(gusto_calendar)
 
-    kinhr_calendar = fetch_calendar(KINHR_LOCAL_ICS_PATH, is_url=False)
-    kinhr_events = get_events(kinhr_calendar)
-
-    # Combine events from both calendars and remove duplicates
-    combined_events = remove_duplicates(gusto_events + kinhr_events)
-
     # Post today's events
     now = arrow.now('US/Eastern')
-    events_today = [event for event in combined_events if (event['start'].date() <= now.date() <= event['end'].date())]
+    events_today = [event for event in gusto_events if (event['start'].date() <= now.date() <= event['end'].date())]
 
     # If today is Monday, post a summary of this week's events and anniversary events from the weekend
     if now.format('dddd') == 'Monday':

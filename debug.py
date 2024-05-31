@@ -21,14 +21,8 @@ def specific_day_job():
     gusto_calendar = main.fetch_calendar(main.GUSTO_ICS_URL)
     gusto_events = main.get_events(gusto_calendar)
 
-    kinhr_calendar = main.fetch_calendar(main.KINHR_LOCAL_ICS_PATH, is_url=False)
-    kinhr_events = main.get_events(kinhr_calendar)
-
-    # Combine events from both calendars and remove duplicates
-    combined_events = main.remove_duplicates(gusto_events + kinhr_events)
-
     # Post events for the specific date
-    events_on_date = [event for event in combined_events if event['start'].date() <= date_arg <= event['end'].date()]
+    events_on_date = [event for event in gusto_events if event['start'].date() <= date_arg <= event['end'].date()]
     main.post_todays_events_to_slack(events_on_date)
 
 
