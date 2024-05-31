@@ -2,7 +2,6 @@ import datetime
 import logging
 import os
 import re
-import string
 from difflib import SequenceMatcher
 
 import arrow
@@ -45,22 +44,6 @@ def fetch_calendar(source, is_url=True):
         print(f"Failed to fetch calendar from source: {source}, due to {e}")
         return None
 
-
-def is_similar(a, b, threshold=0.8):
-    """
-    Check if two strings are similar above a certain threshold.
-
-    Args:
-        a (str): First string to compare.
-        b (str): Second string to compare.
-        threshold (float): The similarity threshold.
-
-    Returns:
-        bool: True if the similarity is above the threshold, False otherwise.
-    """
-    ratio = SequenceMatcher(None, a.lower(), b.lower()).ratio()
-    return ratio > threshold
-
 def get_events(calendar):
     if not calendar:
         return []
@@ -77,9 +60,8 @@ def get_events(calendar):
             description = component.get("description", "")
 
             # Check for "anniversary" in summary or description
-            if is_similar(summary, "anniversary") or is_similar(description, "anniversary"):
+            if "anniversary" in summary.lower() or "anniversary" in description.lower():
                 continue  # Skip adding this event
-
 
             start = arrow.get(component.get("dtstart").dt)
             end = component.get("dtend")
@@ -186,7 +168,6 @@ def post_todays_events_to_slack(events):
             }
         }
     ]
-
 
     for event in events:
         start = event["start"]
