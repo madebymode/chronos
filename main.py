@@ -281,7 +281,7 @@ def daily_job():
     if now.format('dddd') == 'Monday':
         # Fetch events from this week
         end_of_week = now.shift(days=+6)
-        events_this_week = [event for event in combined_events if
+        events_this_week = [event for event in gusto_events if
                             now.date() <= event['start'].date() <= end_of_week.date()]
         post_weekly_summary_to_slack(events_this_week)
 
