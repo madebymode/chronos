@@ -84,8 +84,7 @@ def get_events(calendar):
             summary = component.get("summary")
             description = component.get("description", "")  # Get the description, if available
 
-            # Replace 'Your' with the value of 'CALENDAR_OWNER' and 'Paid Time Off time' with ' - OOO' in the summary
-            modified_summary = summary.replace("Your", calendar_owner).replace("Paid Time Off time", " - OOO")
+            modified_summary = summary.replace("Your Time Off time", f"{calendar_owner} - OOO").replace("Paid Time Off time", f"{calendar_owner} - OOO")
 
             events.append({"start": start, "end": end, "summary": modified_summary, "description": description})
 
